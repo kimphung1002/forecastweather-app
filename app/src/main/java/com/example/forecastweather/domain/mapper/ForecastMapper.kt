@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 object ForecastMapper {
 
@@ -14,8 +15,10 @@ object ForecastMapper {
         sunrise: Long,
         sunset: Long
     ): List<DailyForecast> {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val sdfDisplay = SimpleDateFormat("EEEE, dd", Locale("vi"))
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("Asia/Ho_Chi_Minh")
+        }
+        val sdfDisplay = SimpleDateFormat("EEEE d/M", Locale("vi"))  // ✅ chỉnh đúng format yêu cầu
 
         val grouped = forecastResponse.list.groupBy {
             sdf.format(Date(it.dt * 1000))
@@ -26,15 +29,16 @@ object ForecastMapper {
 
         return filtered.entries.take(5).map { entry ->
             val dailyList = entry.value
-            val maxTemp = dailyList.maxOf { it.main.tempMax }
-            val minTemp = dailyList.minOf { it.main.tempMin }
+            val maxTemp = dailyList.maxOfOrNull { it.main.tempMax }?.toInt() ?: 0
+            val minTemp = dailyList.minOfOrNull { it.main.tempMin }?.toInt() ?: 0
+
             val firstDesc = dailyList[0].weather[0]
 
             val calendar = Calendar.getInstance()
             calendar.time = sdf.parse(entry.key)!!
 
             DailyForecast(
-                date = sdfDisplay.format(calendar.time),
+                date = sdfDisplay.format(calendar.time).replaceFirstChar { it.uppercaseChar() },  // Viết hoa chữ cái đầu
                 description = firstDesc.description.replaceFirstChar { it.uppercaseChar() },
                 icon = firstDesc.icon,
                 tempMax = maxTemp,

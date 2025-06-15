@@ -1,6 +1,7 @@
 package com.example.forecastweather.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,9 +10,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Thermostat
@@ -24,9 +29,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,126 +54,175 @@ fun SettingScreen(settingsViewModel: SettingsViewModel) {
         topBar = {
             TopAppBar(
                 title = {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("Cài đặt", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-            )
-        }
-    ) { paddingValues ->
-
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-
-            SettingItem(
-                icon = Icons.Filled.Thermostat,
-                title = "Đơn vị nhiệt độ",
-                subtitle = "°C hoặc °F",
-                trailingContent = {
-                    DropdownSelector(
-                        options = listOf("°C", "°F"),
-                        selectedOption = if (settings.temperatureUnit == "metric") "°C" else "°F",
-                        onOptionSelected = { selected ->
-                            val unit = if (selected == "°C") "metric" else "imperial"
-                            settingsViewModel.updateTemperatureUnit(unit)
-                        }
+                    Text(
+                        text = "Cài đặt",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 }
             )
+        }
+    ) { paddingValues ->
+        val scrollState  = rememberScrollState()
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .fillMaxSize()
+                .verticalScroll(scrollState), // ✅ THÊM DÒNG NÀY
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            SettingItem(
+                icon = Icons.Filled.Thermostat,
+                title = "Đơn vị nhiệt độ",
+                subtitle = "°C hoặc °F"
+            ) {
+                DropdownSelector(
+                    options = listOf("°C", "°F"),
+                    selectedOption = if (settings.temperatureUnit == "metric") "°C" else "°F",
+                    onOptionSelected = {
+                        settingsViewModel.updateTemperatureUnit(if (it == "°C") "metric" else "imperial")
+                    }
+                )
+            }
 
             SettingItem(
                 icon = Icons.Outlined.Air,
                 title = "Đơn vị gió",
-                subtitle = "km/h, m/s, mph",
-                trailingContent = {
-                    DropdownSelector(
-                        options = listOf("km/h", "m/s", "mph"),
-                        selectedOption = settings.windUnit,
-                        onOptionSelected = { settingsViewModel.updateWindSpeedUnit(it) }
-                    )
-                }
-            )
+                subtitle = "km/h, m/s, mph"
+            ) {
+                DropdownSelector(
+                    options = listOf("km/h", "m/s", "mph"),
+                    selectedOption = settings.windUnit,
+                    onOptionSelected = { settingsViewModel.updateWindSpeedUnit(it) }
+                )
+            }
 
             SettingItem(
                 icon = Icons.Filled.Timelapse,
                 title = "Định dạng thời gian",
-                subtitle = "12h hoặc 24h",
-                trailingContent = {
-                    DropdownSelector(
-                        options = listOf("12h", "24h"),
-                        selectedOption = settings.timeFormat,
-                        onOptionSelected = { settingsViewModel.updateTimeFormat(it) }
-                    )
-                }
-            )
-
-
+                subtitle = "12h hoặc 24h"
+            ) {
+                DropdownSelector(
+                    options = listOf("12h", "24h"),
+                    selectedOption = settings.timeFormat,
+                    onOptionSelected = { settingsViewModel.updateTimeFormat(it) }
+                )
+            }
 
             SettingItem(
                 icon = Icons.Outlined.DarkMode,
                 title = "Chế độ giao diện",
-                subtitle = "Sáng, Tối",
-                trailingContent = {
-                    DropdownSelector(
-                        options = listOf("Sáng", "Tối"),
-                        selectedOption = settings.theme,
-                        onOptionSelected = { settingsViewModel.updateTheme(it) }
-                    )
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun SettingItem(icon: ImageVector, title: String, subtitle: String, trailingContent: @Composable () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            Text(text = subtitle, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        trailingContent()
-    }
-}
-
-@Composable
-fun DropdownSelector(options: List<String>, selectedOption: String, onOptionSelected: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        Row(
-            modifier = Modifier.clickable { expanded = true }.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(selectedOption, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium, fontSize = 16.sp)
-            Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Dropdown Arrow", tint = MaterialTheme.colorScheme.primary)
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = {
-                        Text(option, fontWeight = if (option == selectedOption) FontWeight.Bold else FontWeight.Normal,
-                            color = if (option == selectedOption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                    },
-                    onClick = {
-                        onOptionSelected(option)
-                        expanded = false
-                    },
-                    modifier = if (option == selectedOption) Modifier.background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)) else Modifier
+                subtitle = "Sáng, Tối"
+            ) {
+                DropdownSelector(
+                    options = listOf("Sáng", "Tối"),
+                    selectedOption = settings.theme,
+                    onOptionSelected = { settingsViewModel.updateTheme(it) }
                 )
             }
         }
     }
 }
+
+@Composable
+fun SettingItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    trailingContent: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
+            .padding(20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(42.dp)
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp)) // Khoảng cách trước dropdown
+
+        trailingContent() // ✅ Đặt trong Row, không bị tràn
+    }
+}
+
+
+@Composable
+fun DropdownSelector(
+    options: List<String>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Surface(
+            modifier = Modifier
+                .clickable { expanded = true }
+                .height(42.dp)
+                .width(100.dp)
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
+            tonalElevation = 2.dp,
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(selectedOption, color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
+                Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            }
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                val isSelected = option == selectedOption
+
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = option,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded = false
+                    },
+                    modifier = Modifier
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                            else MaterialTheme.colorScheme.surface
+                        )
+                        .fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+

@@ -39,4 +39,11 @@ class SearchHistoryRepository(private val context: Context) {
             preferences[SEARCH_HISTORY_KEY] = emptySet()
         }
     }
+
+    suspend fun saveAll(historyList: List<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[stringSetPreferencesKey("search_history")] = historyList.toSet()
+        }
+    }
+
 }

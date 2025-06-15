@@ -6,21 +6,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.forecastweather.WeatherRepository
 import com.example.forecastweather.data.api.NetworkResponse
-import com.example.forecastweather.domain.model.DailyForecast
 import kotlinx.coroutines.launch
 
 class WeeklyForecastViewModel(
     private val repository: WeatherRepository
 ) : ViewModel() {
 
-    private val _forecast = MutableLiveData<NetworkResponse<List<DailyForecast>>>()
-    val forecast: LiveData<NetworkResponse<List<DailyForecast>>> = _forecast
+    private val _forecast = MutableLiveData<NetworkResponse<WeatherRepository.WeeklyForecastResult>>()
+    val forecast: LiveData<NetworkResponse<WeatherRepository.WeeklyForecastResult>> = _forecast
 
     fun loadWeeklyForecast(city: String) {
         _forecast.value = NetworkResponse.Loading
 
         viewModelScope.launch {
-            val result = repository.getWeeklyForecast(city)
+            val result = repository.getWeeklyForecastFull(city)
             _forecast.value = result
         }
     }

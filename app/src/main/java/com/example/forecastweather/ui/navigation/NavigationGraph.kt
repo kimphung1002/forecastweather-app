@@ -53,6 +53,7 @@ fun NavigationGraph(
 
         composable(NavigationRoutes.WEEKLY) {
             val currentCity = viewModel.currentCity.value ?: "Hanoi"
+
             val repository = WeatherRepository()
             val weeklyViewModel: WeeklyForecastViewModel = viewModel(
                 factory = WeeklyForecastViewModelFactory(repository)

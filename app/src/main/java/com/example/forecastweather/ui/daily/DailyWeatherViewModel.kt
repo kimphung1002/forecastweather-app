@@ -10,12 +10,17 @@ import com.example.forecastweather.data.api.NetworkResponse
 import com.example.forecastweather.data.api.RetrofitInstance
 import com.example.forecastweather.data.api.WeatherModel
 import com.example.forecastweather.data.model.ForecastResponse
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class DailyWeatherViewModel : ViewModel() {
 
     private val _currentCity = mutableStateOf("Hanoi")
     val currentCity: State<String> = _currentCity
+
+    private val _currentCountry = MutableStateFlow("VN")
+    val currentCountry: StateFlow<String> = _currentCountry
 
     private val _weatherResult = MutableLiveData<NetworkResponse<WeatherModel>?>()
     val weatherResult: MutableLiveData<NetworkResponse<WeatherModel>?> = _weatherResult
@@ -65,5 +70,10 @@ class DailyWeatherViewModel : ViewModel() {
     fun resetWeatherResult() {
         _weatherResult.value = null
         _forecastResult.value = null
+    }
+
+    fun setCurrentLocation(city: String, country: String) {
+        _currentCity.value = city
+        _currentCountry.value = country
     }
 }

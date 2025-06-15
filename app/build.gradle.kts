@@ -82,6 +82,7 @@ dependencies {
 
     // Coil (tải ảnh)
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("io.coil-kt:coil-svg:2.7.0")
 
     // Threeten (LocalDateTime)
     implementation("org.threeten:threetenbp:1.6.8")

@@ -55,7 +55,13 @@ class WeatherRepository {
         }
     }
 
-    suspend fun getWeeklyForecast(city: String): NetworkResponse<List<DailyForecast>> {
+    data class WeeklyForecastResult(
+        val cityName: String,
+        val countryCode: String,
+        val dailyForecasts: List<DailyForecast>
+    )
+
+    suspend fun getWeeklyForecastFull(city: String): NetworkResponse<WeeklyForecastResult> {
         return try {
             val weatherResponse = weatherApi.getWeather(city, Constant.apiKey)
             val forecastResponse = weatherApi.getForecast(city, Constant.apiKey)
@@ -70,7 +76,14 @@ class WeatherRepository {
                         weatherBody.sys.sunrise,
                         weatherBody.sys.sunset
                     )
-                    NetworkResponse.Success(data)
+
+                    NetworkResponse.Success(
+                        WeeklyForecastResult(
+                            cityName = forecastBody.city.name,
+                            countryCode = forecastBody.city.country,
+                            dailyForecasts = data
+                        )
+                    )
                 } else {
                     NetworkResponse.Error("Empty response body")
                 }
@@ -81,5 +94,6 @@ class WeatherRepository {
             NetworkResponse.Error("Network failure: ${e.message}")
         }
     }
+
 
 }

@@ -11,10 +11,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.WindPower
@@ -31,16 +33,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.example.forecastweather.data.api.NetworkResponse
 import com.example.forecastweather.data.api.WeatherModel
 import com.example.forecastweather.data.model.ForecastItem
 import com.example.forecastweather.data.model.ForecastResponse
+import com.example.forecastweather.domain.model.UserSettings
 import com.example.forecastweather.ui.settings.SettingsViewModel
+import com.example.forecastweather.ui.util.WeatherIcon
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -55,7 +61,7 @@ fun DailyWeatherScreen(
     val weatherResult = viewModel.weatherResult.observeAsState()
     val userSettings by settingsViewModel.userSettings.collectAsState()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(userSettings) {
         viewModel.reloadIfNeeded()
     }
 
@@ -80,7 +86,7 @@ fun LoadingState() {
 @Composable
 fun ErrorState(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = message, color = Color.Red)
+        Text(text = message, color = MaterialTheme.colorScheme.error)
     }
 }
 
@@ -88,49 +94,89 @@ fun ErrorState(message: String) {
 fun SuccessState(
     data: WeatherModel,
     forecastData: NetworkResponse<ForecastResponse>?,
-    userSettings: com.example.forecastweather.domain.model.UserSettings
+    userSettings: UserSettings
 ) {
-    Column(
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val screenWidth = configuration.screenWidthDp.dp
+
+    val iconSize = (screenWidth * 0.35f).coerceIn(100.dp, 140.dp)
+    val cardHeight = (screenHeight * 0.18f).coerceIn(100.dp, 130.dp)
+    val cardWidth = (screenWidth * 0.28f).coerceIn(80.dp, 110.dp)
+
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        LocationInfo(data)
-        Spacer(modifier = Modifier.height(16.dp))
+        item {
+            LocationInfo(data)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         val (maxTemp, minTemp) = if (forecastData is NetworkResponse.Success) {
             calculateTodayMaxMinTemp(forecastData.data.list, data.timezone)
-        } else {
-            Pair(data.main.tempMax, data.main.tempMin)
+        } else Pair(data.main.tempMax, data.main.tempMin)
+
+        item {
+            WeatherMainInfo(
+                data = data,
+                maxTemp = maxTemp,
+                minTemp = minTemp,
+                userSettings = userSettings,
+                iconSize = iconSize
+            )
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        WeatherMainInfo(data, maxTemp, minTemp, userSettings)
-        Spacer(modifier = Modifier.height(24.dp))
-
-        WeatherInfoCard(
-            humidity = data.main.humidity,
-            windSpeed = data.wind.speed,
-            sunrise = data.sys.sunrise,
-            sunset = data.sys.sunset,
-            timezoneOffset = data.timezone,
-            userSettings = userSettings
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
+        item {
+            WeatherInfoCard(
+                humidity = data.main.humidity,
+                windSpeed = data.wind.speed,
+                sunrise = data.sys.sunrise,
+                sunset = data.sys.sunset,
+                timezoneOffset = data.timezone,
+                userSettings = userSettings
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
         if (forecastData is NetworkResponse.Success) {
-            HourlyForecast(forecastData.data.list.take(8), data.timezone, userSettings)
+            item {
+                HourlyForecast(
+                    forecastList = forecastData.data.list.take(8),
+                    timezone = data.timezone,
+                    userSettings = userSettings,
+                    cardHeight = cardHeight,
+                    cardWidth = cardWidth
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
         }
     }
 }
 
 @Composable
 fun LocationInfo(data: WeatherModel) {
-    Text(
-        text = "${data.name}, ${data.sys.country}",
-        style = MaterialTheme.typography.titleLarge
-    )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            imageVector = Icons.Default.Place,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = "${data.name}, ${data.sys.country}",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+    }
 }
 
 @Composable
@@ -138,44 +184,44 @@ fun WeatherMainInfo(
     data: WeatherModel,
     maxTemp: Double,
     minTemp: Double,
-    userSettings: com.example.forecastweather.domain.model.UserSettings
+    userSettings: UserSettings,
+    iconSize: Dp
 ) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            AsyncImage(
-                model = "https://openweathermap.org/img/wn/${data.weather.firstOrNull()?.icon}@4x.png",
-                contentDescription = "Weather Icon",
-                modifier = Modifier.size(220.dp)
+        Text(
+            text = formatTemperature(data.main.temp, userSettings.temperatureUnit),
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
-            Text(
-                text = data.weather.firstOrNull()?.description.orEmpty().replaceFirstChar { it.uppercase() },
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
+        )
 
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = "Hôm nay: ${SimpleDateFormat("EEEE, dd MMM", Locale.getDefault()).format(Date(System.currentTimeMillis()))}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = formatTemperature(data.main.temp, userSettings.temperatureUnit),
-                style = MaterialTheme.typography.displayMedium.copy(color = Color(0xFF0D47A1))
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "C: ${formatTemperature(maxTemp, userSettings.temperatureUnit)} | T: ${formatTemperature(minTemp, userSettings.temperatureUnit)}",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = Color(0xFF0D47A1),
-                textAlign = TextAlign.End
-            )
-        }
+        Spacer(modifier = Modifier.height(2.dp))
+
+        WeatherIcon(
+            iconCode = data.weather.firstOrNull()?.icon.orEmpty(),
+            modifier = Modifier.size(iconSize)
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Text(
+            text = data.weather.firstOrNull()?.description?.replaceFirstChar { it.uppercase() }.orEmpty(),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Text(
+            text = "C: ${formatTemperature(maxTemp, userSettings.temperatureUnit)} - T: ${formatTemperature(minTemp, userSettings.temperatureUnit)}",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -186,80 +232,133 @@ fun WeatherInfoCard(
     sunrise: Long,
     sunset: Long,
     timezoneOffset: Int,
-    userSettings: com.example.forecastweather.domain.model.UserSettings
+    userSettings: UserSettings
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                WeatherInfoItem(Icons.Default.WaterDrop, "Độ ẩm", "$humidity %")
-                WeatherInfoItem(Icons.Default.WindPower, "Gió", formatWind(windSpeed, userSettings.windUnit))
-                WeatherInfoItem(Icons.Default.WbSunny, "Mặt trời mọc", formatTime(sunrise, timezoneOffset, userSettings.timeFormat))
+                WeatherInfoItem(
+                    icon = Icons.Default.WaterDrop,
+                    label = "Độ ẩm",
+                    value = "$humidity %",
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 4.dp)
+                )
+                WeatherInfoItem(
+                    icon = Icons.Default.WindPower,
+                    label = "Gió",
+                    value = formatWind(windSpeed, userSettings.windUnit),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 4.dp)
+                )
+                WeatherInfoItem(
+                    icon = Icons.Default.WbSunny,
+                    label = "Bình minh",
+                    value = formatTime(sunrise, timezoneOffset, userSettings.timeFormat),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 4.dp)
+                )
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Mặt trời lặn: ${formatTime(sunset, timezoneOffset, userSettings.timeFormat)}",
-                style = MaterialTheme.typography.bodyMedium
+                text = formatCurrentDateTime(userSettings.timeFormat),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+
             )
         }
     }
 }
 
 @Composable
-fun WeatherInfoItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(80.dp)) {
-        Icon(imageVector = icon, contentDescription = label, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = label, style = MaterialTheme.typography.labelMedium)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+fun WeatherInfoItem(icon: ImageVector, label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
 @Composable
-fun HourlyForecast(forecastList: List<ForecastItem>, timezone: Int, userSettings: com.example.forecastweather.domain.model.UserSettings) {
+fun HourlyForecast(
+    forecastList: List<ForecastItem>,
+    timezone: Int,
+    userSettings: UserSettings,
+    cardHeight: Dp,
+    cardWidth: Dp
+) {
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(forecastList) { item ->
             Card(
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(3.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier
-                    .width(140.dp)
-                    .height(220.dp)
+                    .width(cardWidth)
+                    .height(cardHeight)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
+                    verticalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Text(
                         text = formatTime(item.dt, timezone, userSettings.timeFormat),
-                        style = MaterialTheme.typography.titleMedium.copy(color = Color(0xFF1565C0), fontWeight = FontWeight.SemiBold)
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     )
-                    AsyncImage(
-                        model = "https://openweathermap.org/img/wn/${item.weather[0].icon}@4x.png",
-                        contentDescription = "Weather Icon",
-                        modifier = Modifier.size(120.dp)
+                    WeatherIcon(
+                        iconCode = item.weather[0].icon,
+                        modifier = Modifier.size(cardWidth * 0.5f)
                     )
                     Text(
                         text = formatTemperature(item.main.temp, userSettings.temperatureUnit),
-                        style = MaterialTheme.typography.headlineSmall.copy(color = Color(0xFF0D47A1), fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
                 }
             }
@@ -283,13 +382,33 @@ fun calculateTodayMaxMinTemp(forecastList: List<ForecastItem>, timezoneOffset: I
     return Pair(maxTemp, minTemp)
 }
 
+fun getTemperatureSymbol(unit: String): String {
+    return if (unit == "imperial") "°F" else "°C"
+}
 fun formatTemperature(temp: Double, unit: String): String {
-    return if (unit == "°F") {
-        val fahrenheit = temp * 9 / 5 + 32
-        "${fahrenheit.toInt()}°F"
+    val value = if (unit == "imperial") {
+        temp * 9 / 5 + 32
     } else {
-        "${temp.toInt()}°C"
+        temp
     }
+    return "${value.toInt()}${getTemperatureSymbol(unit)}"
+}
+
+
+
+
+fun formatCurrentDateTime(timeFormat: String): String {
+    val currentTime = System.currentTimeMillis()
+    val date = Date(currentTime)
+    val dayOfWeekFormat = SimpleDateFormat("EEEE", Locale("vi"))
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("vi"))
+    val timePattern = if (timeFormat == "12h") "hh:mm a" else "HH:mm"
+    val timeFormatSdf = SimpleDateFormat(timePattern, Locale.getDefault())
+
+    val dayOfWeek = dayOfWeekFormat.format(date).replaceFirstChar { it.uppercase() }
+    val dateStr = dateFormat.format(date)
+    val timeStr = timeFormatSdf.format(date)
+    return "$dayOfWeek, $dateStr - $timeStr"
 }
 
 fun formatWind(speed: Double, unit: String): String {
