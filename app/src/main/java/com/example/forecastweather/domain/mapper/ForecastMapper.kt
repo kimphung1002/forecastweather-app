@@ -15,6 +15,7 @@ object ForecastMapper {
         sunrise: Long,
         sunset: Long
     ): List<DailyForecast> {
+
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
             timeZone = TimeZone.getTimeZone("Asia/Ho_Chi_Minh")
         }
@@ -29,18 +30,23 @@ object ForecastMapper {
 
         return filtered.entries.take(5).map { entry ->
             val dailyList = entry.value
+
             val maxTemp = dailyList.maxOfOrNull { it.main.tempMax }?.toInt() ?: 0
             val minTemp = dailyList.minOfOrNull { it.main.tempMin }?.toInt() ?: 0
 
-            val firstDesc = dailyList[0].weather[0]
+            // ✅ TIM ĐIỂM GẦN 12H NHẤT
+            val noonTimestamp = getNoonTimestamp(entry.key)
+            val closestItem = dailyList.minByOrNull { kotlin.math.abs(it.dt * 1000 - noonTimestamp) } ?: dailyList[0]
+
+            val firstDesc = closestItem.weather[0]
 
             val calendar = Calendar.getInstance()
             calendar.time = sdf.parse(entry.key)!!
 
             DailyForecast(
-                date = sdfDisplay.format(calendar.time).replaceFirstChar { it.uppercaseChar() },  // Viết hoa chữ cái đầu
+                date = sdfDisplay.format(calendar.time).replaceFirstChar { it.uppercaseChar() },
                 description = firstDesc.description.replaceFirstChar { it.uppercaseChar() },
-                icon = firstDesc.icon,
+                icon = normalizeIcon(firstDesc.icon),
                 tempMax = maxTemp,
                 tempMin = minTemp,
                 wind = dailyList[0].wind.speed,
@@ -49,5 +55,24 @@ object ForecastMapper {
                 sunset = SimpleDateFormat("HH:mm").format(Date(sunset * 1000))
             )
         }
+    }
+
+    // ✅ Tính timestamp của 12h trưa
+    private fun getNoonTimestamp(dateStr: String): Long {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val date = sdf.parse(dateStr) ?: Date()
+        val calendar = Calendar.getInstance().apply {
+            time = date
+            set(Calendar.HOUR_OF_DAY, 12)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return calendar.timeInMillis
+    }
+
+    // ✅ Chuẩn hóa icon (có thể thêm nếu muốn loại bỏ n thành d khi ban ngày)
+    private fun normalizeIcon(icon: String): String {
+        return if (icon.endsWith("n")) icon.replace("n", "d") else icon
     }
 }

@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.forecastweather.data.api.NetworkResponse
 import com.example.forecastweather.domain.model.DailyForecast
 import com.example.forecastweather.domain.model.UserSettings
@@ -53,7 +54,6 @@ import com.example.forecastweather.ui.settings.SettingsViewModel
 import com.example.forecastweather.ui.util.WeatherIcon
 import java.text.SimpleDateFormat
 import java.util.Locale
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun LocationInfoRow(city: String, country: String) {
@@ -159,10 +159,10 @@ fun ForecastDayItem(forecast: DailyForecast, settings: UserSettings?) {
             .fillMaxWidth()
             .clickable { expanded = !expanded },
         colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(16.dp)
+        elevation = CardDefaults.cardElevation(3.dp),
+        shape = RoundedCornerShape(18.dp)   // làm bo góc to hơn cho sang
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -170,13 +170,13 @@ fun ForecastDayItem(forecast: DailyForecast, settings: UserSettings?) {
                 Column(modifier = Modifier.weight(2.5f)) {
                     Text(
                         text = forecast.date,
-                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = forecast.description,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -186,8 +186,8 @@ fun ForecastDayItem(forecast: DailyForecast, settings: UserSettings?) {
                 WeatherIcon(
                     iconCode = forecast.icon,
                     modifier = Modifier
-                        .size(52.dp)
-                        .padding(horizontal = 4.dp)
+                        .size(64.dp)
+                        .padding(horizontal = 6.dp)
                 )
 
                 Column(
@@ -196,13 +196,12 @@ fun ForecastDayItem(forecast: DailyForecast, settings: UserSettings?) {
                 ) {
                     Text(
                         text = tempMax,
-                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp),
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = tempMin,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -212,13 +211,13 @@ fun ForecastDayItem(forecast: DailyForecast, settings: UserSettings?) {
                     imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
             if (expanded) {
                 Divider(
-                    modifier = Modifier.padding(vertical = 8.dp),
+                    modifier = Modifier.padding(vertical = 10.dp),
                     color = MaterialTheme.colorScheme.outlineVariant
                 )
                 ForecastDetailItem(label = "Gió", value = "$wind $windUnit")

@@ -14,6 +14,11 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        buildConfigField(
+            type = "String",
+            name = "OPENWEATHER_API_KEY",
+            value = "\"${project.properties["OPENWEATHER_API_KEY"]}\""
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -38,6 +43,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true // ✅ Thêm dòng này để bật hỗ trợ BuildConfig
     }
 }
 

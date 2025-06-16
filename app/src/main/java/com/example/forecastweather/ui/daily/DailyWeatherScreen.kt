@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.forecastweather.data.api.NetworkResponse
 import com.example.forecastweather.data.api.WeatherModel
 import com.example.forecastweather.data.model.ForecastItem
@@ -100,15 +101,18 @@ fun SuccessState(
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
 
-    val iconSize = (screenWidth * 0.35f).coerceIn(100.dp, 140.dp)
-    val cardHeight = (screenHeight * 0.18f).coerceIn(100.dp, 130.dp)
-    val cardWidth = (screenWidth * 0.28f).coerceIn(80.dp, 110.dp)
+    val iconSize = (screenWidth * 0.6f).coerceIn(180.dp, 240.dp)
+    val cardHeight = (screenHeight * 0.2f).coerceIn(140.dp, 160.dp)
+    val cardWidth = (screenWidth * 0.26f).coerceIn(90.dp, 110.dp)
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceEvenly
+
+
     ) {
         item {
             LocationInfo(data)
@@ -173,7 +177,10 @@ fun LocationInfo(data: WeatherModel) {
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = "${data.name}, ${data.sys.country}",
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
             color = MaterialTheme.colorScheme.onBackground
         )
     }
@@ -210,9 +217,12 @@ fun WeatherMainInfo(
 
         Text(
             text = data.weather.firstOrNull()?.description?.replaceFirstChar { it.uppercase() }.orEmpty(),
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.SemiBold
+            ),
             color = MaterialTheme.colorScheme.onBackground
         )
+
 
         Spacer(modifier = Modifier.height(2.dp))
 
@@ -346,7 +356,9 @@ fun HourlyForecast(
                         text = formatTime(item.dt, timezone, userSettings.timeFormat),
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp
+
                         )
                     )
                     WeatherIcon(
